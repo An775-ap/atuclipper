@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Clipper Pro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: #1e1e1e; padding: 30px; border-radius: 10px; width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #ff0000; }
+        label { display: block; margin-top: 15px; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 5px; background: #333; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin-top: 20px; border: none; border-radius: 5px; background: #ff0000; color: white; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #cc0000; }
+        #status { margin-top: 15px; text-align: center; font-size: 14px; color: #aaaaaa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>YT Clipper Pro</h2>
+    
+    <label>YouTube Link:</label>
+    <input type="text" id="ytUrl" placeholder="https://www.youtube.com/watch?v=...">
+
+    <label>Aspect Ratio:</label>
+    <select id="ratio">
+        <option value="16:9">16:9 (Standard Full HD)</option>
+        <option value="9:16">9:16 (Shorts / Reels)</option>
+    </select>
+
+    <label>Start Time (hh:mm:ss):</label>
+    <input type="text" id="startTime" placeholder="00:00:00" value="00:00:00">
+
+    <label>End Time OR Duration (hh:mm:ss):</label>
+    <input type="text" id="endTime" placeholder="00:00:15">
+
+    <button onclick="generateClip()" id="btn">Generate Clip</button>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    // Replace this URL with your backend URL once deployed (Phase 2)
+    const BACKEND_URL = "https://clipper-2.onrender.com/"; 
+
+    async function generateClip() {
+        const url = document.getElementById('ytUrl').value;
+        const ratio = document.getElementById('ratio').value;
+        const start = document.getElementById('startTime').value;
+        const end = document.getElementById('endTime').value;
+        const statusDiv = document.getElementById('status');
+        const btn = document.getElementById('btn');
+
+        if (!url || !start || !end) {
+            alert("Please fill all fields.");
+            return;
+        }
+
+        btn.disabled = true;
+        statusDiv.innerHTML = "Processing... this may take a few minutes for 1080p.";
+
+        try {
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, ratio, start, end })
+            });
+
+            if (response.ok) {
+                // Trigger file download automatically
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = "yt_clip.mp4";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                statusDiv.innerHTML = "✅ Download Complete!";
+            } else {
+                const errorData = await response.json();
+                statusDiv.innerHTML = "❌ Error: " + errorData.error;
+            }
+        } catch (error) {
+            statusDiv.innerHTML = "❌ Server error. Make sure backend is running.";
+        }
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>
